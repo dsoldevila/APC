@@ -6,7 +6,6 @@ Created on Thu Sep 27 17:54:15 2018
 """
 
 import os
-import glob
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.datasets import make_regression
@@ -27,8 +26,9 @@ def load_dataset(path):
     Carrega la base de dades
     @param path
     """
-    #if path not full
-    path = os.path.join(os.getcwd(), path)
+    if(os.path.isabs(path) == False):
+        path = os.path.join(os.getcwd(), path)
+    
     return
     
 def split_data():
