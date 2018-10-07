@@ -30,7 +30,7 @@ def mean_squared_error(target, reg):
     """
     return ((target - reg)**2).mean()
 
-def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None):
+def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None, standarize=False):
     """
     Carrega la base de dades
     @param path (abs or not)
@@ -49,10 +49,10 @@ def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None):
     target = target.reshape(target.shape[0], 1)
     #db_guess = db_guess.reshape(db_guess.shape[0], 1)
     
-    return split_dataset(attributes, target)
+    return split_dataset(attributes, target, standarize=standarize)
     
 
-def split_dataset(attributes, target, train_ratio=0.8):
+def split_dataset(attributes, target, train_ratio=0.8, standarize=False):
     """
     Divideix aleatòriament la base de dades en training set i validation set
     """
@@ -66,7 +66,8 @@ def split_dataset(attributes, target, train_ratio=0.8):
     at_val = attributes[indices_val, :]
     target_val = target[indices_val]
     
-    at_train, at_val = standarize(at_train, at_val)
+    if(standarize):
+        at_train, at_val = Standarize(at_train, at_val)
     
     return at_train, target_train, at_val, target_val
 
@@ -76,7 +77,7 @@ def regression(x, y):
     return regr
     
     
-def standarize(at_train, at_val):
+def Standarize(at_train, at_val):
     mean = at_train.mean(axis=0) #compute mean for every attribute
     std = at_train.std(0) #standard deviation
     at_t = at_train - mean
@@ -96,10 +97,10 @@ def standarize(at_train, at_val):
     return at_t, at_v
     
 
-def p1a_c():
+def p1a_c(standarize):
     """
     Apartat (C) de la pràctica 1a.
-    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el mse
+    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el valor mse
     """
     ATT_MIN = 2 #Attributes' range of columns in DB
     ATT_MAX = 8
@@ -108,8 +109,9 @@ def p1a_c():
     
     DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     
-    at_train, target_train, at_val, target_val = load_dataset("Database\machine.data.txt", ATT_MIN, ATT_MAX, TARGET)
+    at_train, target_train, at_val, target_val = load_dataset("Database\machine.data.txt", ATT_MIN, ATT_MAX, TARGET, standarize=standarize)
 
+    #Calculo MSEs
     mse_list = []
     at_t = at_train[:, 0].reshape(at_train.shape[0], 1)
     at_v = at_val[:, 0].reshape(at_val.shape[0], 1)
@@ -143,5 +145,3 @@ def p1a_c():
     
     return
     
-
-p1a_c()
