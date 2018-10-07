@@ -109,7 +109,7 @@ def p1a_c(standarize):
     
     DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     
-    at_train, target_train, at_val, target_val = load_dataset("Database\machine.data.txt", ATT_MIN, ATT_MAX, TARGET, standarize=standarize)
+    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, standarize=standarize)
 
     #Calculo MSEs
     mse_list = []
