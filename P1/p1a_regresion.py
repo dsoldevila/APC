@@ -11,7 +11,6 @@ Created on Thu Sep 27 17:54:15 2018
     i no sembla que tingui sentit tenir-los en compte com a mètrica de
     rendiment. Mirar si tenen correlació, un "no crec" no és vàlid
 
-
 """
 
 
@@ -48,9 +47,28 @@ def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None):
     
 
     target = target.reshape(target.shape[0], 1)
-    db_guess = db_guess.reshape(db_guess.shape[0], 1)
+    #db_guess = db_guess.reshape(db_guess.shape[0], 1)
     
-    return attributes, target, db_guess
+    return split_dataset(attributes, target)
+    
+
+def split_dataset(attributes, target, train_ratio=0.8):
+    """
+    Divideix aleatòriament la base de dades en training set i validation set
+    """
+    indices = np.arange(attributes.shape[0])
+    np.random.shuffle(indices)
+    n_train = int(np.floor(attributes.shape[0]*train_ratio))
+    indices_train = indices[:n_train]
+    indices_val = indices[-n_train:]
+    at_train = attributes[indices_train, :]
+    target_train = target[indices_train]
+    at_val = attributes[indices_val, :]
+    target_val = target[indices_val]
+    
+    at_train, at_val = standarize(at_train, at_val)
+    
+    return at_train, target_train, at_val, target_val
 
 def regression(x, y):
     regr = LinearRegression()
@@ -58,73 +76,72 @@ def regression(x, y):
     return regr
     
     
-def split_data():
-    return
+def standarize(at_train, at_val):
+    mean = at_train.mean(axis=0) #compute mean for every attribute
+    std = at_train.std(0) #standard deviation
+    at_t = at_train - mean
+    at_t /= std
     
-def standarize():
-    return
+    at_v = at_val - mean
+    at_v /= std
+    
+    """
+    for i in range(6):
+        plt.figure()
+        plt.title("Histograma de l'atribut 0")
+        plt.xlabel("Attribute Value")
+        plt.ylabel("Count")
+        hist = plt.hist(at_t[:,i], bins=11, range=[np.min(at_t[:,i]), np.max(at_t[:,i])], histtype="bar", rwidth=0.8)
+    """
+    return at_t, at_v
+    
 
 def p1a_c():
     """
-    Apartat (C) de la pràctica 1a
+    Apartat (C) de la pràctica 1a.
+    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el mse
     """
     ATT_MIN = 2 #Attributes' range of columns in DB
     ATT_MAX = 8
     TARGET = 8 #Column index of target
-    DB_GUESS = 9 #Column index of the regression guess
+    DB_GUESS = 9 #Column index of the database regression guess
     
-    DB_COL = ["venor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     
-    attributes, target, dg= load_dataset("Database\machine.data.txt", ATT_MIN, ATT_MAX, TARGET, DB_GUESS)
-    
-    """
-    at = attributes[:, 2].reshape(attributes.shape[0], 1)
-    regr = regression(at, target)
-    predicted = regr.predict(at)
-    """
+    at_train, target_train, at_val, target_val = load_dataset("Database\machine.data.txt", ATT_MIN, ATT_MAX, TARGET)
+
     mse_list = []
-    at = attributes[:, 0].reshape(attributes.shape[0], 1)
+    at_t = at_train[:, 0].reshape(at_train.shape[0], 1)
+    at_v = at_val[:, 0].reshape(at_val.shape[0], 1)
     
-    regr = regression(at, target)
-    predicted = regr.predict(at)
-    mse = mean_squared_error(target, predicted)
+    regr = regression(at_t, target_train)
+    
+    predicted = regr.predict(at_v)
+
+    mse = mean_squared_error(target_val, predicted)
     mse_list.append((DB_COL[0+ATT_MIN], mse))
     
     lowest_mse = mse
     lowest_mse_i = 0
    
     for i in range(1, ATT_MAX-ATT_MIN):
-        at = attributes[:, i].reshape(attributes.shape[0], 1)
-        regr = regression(at, target)
-        predicted = regr.predict(at)
-        mse = mean_squared_error(target, predicted)
+        at_t = at_train[:, i].reshape(at_train.shape[0], 1)
+        at_v = at_val[:, i].reshape(at_val.shape[0], 1)
+        regr = regression(at_t, target_train)
+        predicted = regr.predict(at_v)
+        
+        mse = mean_squared_error(target_val, predicted)
         mse_list.append((DB_COL[i+ATT_MIN], mse))
+        
         con = (lowest_mse<mse)
         lowest_mse = lowest_mse if con else mse
         lowest_mse_i = lowest_mse_i if con else i
+        
     print("MSEs:")
     print(str(mse_list)+"\n")
     print(DB_COL[lowest_mse_i+ATT_MIN]+ " has the lowest mse: "+str(lowest_mse))
     
     return
     
-"""
-attributes, target, dg= load_dataset("Database\machine.data.txt")
-at = attributes[:, 2].reshape(attributes.shape[0], 1)
 
-print(at.shape)
-print(target.shape)
-
-regr = regression(at, target)
-predicted = regr.predict(at)
-
-plt.plot(at, predicted, 'r')
-plt.scatter(at, target)
-
-print("MSE: ")
-print(mean_squared_error(target, predicted))
-
-print("SCORE: ")
-print(regr.score(at, target))
-"""
 p1a_c()
