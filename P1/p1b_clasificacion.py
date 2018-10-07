@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn import svm
@@ -12,9 +13,19 @@ def p1b_c():
 	"""
 	Funció principal per a l'apartat C de la pràctica 1b.
 	"""
+	ATT_MIN = 2 #Attributes' range of columns in DB
+	ATT_MAX = 8
+	TARGET = 8 #Column index of target
+	DB_GUESS = 9 #Column index of the database regression guess
+
+	DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+
+	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET)
+
+	
 
 
-def split_data(x, y, train_ratio=0.7):
+def split_data(x, y, train_ratio=0.8):
 	indices = np.arange(x.shape[0])
 	np.random.shuffle(indices)
 	n_train = int(np.floor(x.shape[0]*train_ratio))
@@ -43,3 +54,8 @@ def train_svm(x, y, kernel='linear', C=0.01, gamma=0.001, probability=True):
     # l'entrenem
     return svclin.fit(x, y)
 
+def main():
+	p1b_c()
+
+if __name__ == "__main__":
+	main()
