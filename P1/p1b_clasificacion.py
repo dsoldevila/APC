@@ -22,7 +22,16 @@ def p1b_c():
 
 	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET)
 
-	
+	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
+
+	logireg = LogisticRegression(C=2.0, fit_intercept=True, penalty='l2', tol=0.001)
+	logireg.fit(x_train, y_train)
+
+	print ("Correct classification Logistic ", 0.7, "%: ", logireg.score(x_val, y_val))
+
+
+
+
 
 
 def split_data(x, y, train_ratio=0.8):
