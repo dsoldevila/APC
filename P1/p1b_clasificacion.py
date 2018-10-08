@@ -2,37 +2,12 @@
 
 import os
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+#from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 import matplotlib.pyplot as plt
 
 # Importem el mètode per carregar la base de dades del mòdul de la pràctica 1a.
 from p1a_regresion import load_dataset, split_dataset
-
-def p1b_c():
-	"""
-	Funció principal per a l'apartat C de la pràctica 1b.
-	"""
-	ATT_MIN = 2 #Attributes' range of columns in DB
-	ATT_MAX = 8
-	TARGET = 8 #Column index of target
-	DB_GUESS = 9 #Column index of the database regression guess
-
-	DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
-
-	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET)
-
-	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
-
-	logireg = LogisticRegression(C=2.0, fit_intercept=True, penalty='l2', tol=0.001)
-	logireg.fit(x_train, y_train)
-
-	print ("Correct classification Logistic ", 0.7, "%: ", logireg.score(x_val, y_val))
-
-
-
-
-
 
 def split_data(x, y, train_ratio=0.8):
 	indices = np.arange(x.shape[0])
@@ -62,6 +37,60 @@ def train_svm(x, y, kernel='linear', C=0.01, gamma=0.001, probability=True):
 
     # l'entrenem
     return svclin.fit(x, y)
+
+def logistic_regression(x, y, alpha = 0.05, lamda = 0):
+
+	m, n = np.shape(x)
+	theta = np.ones(n)
+	xTrans = x.transpose()
+	oldcost = 0.0
+
+	value = True
+	while (value):
+		hypothesis = np.dot(x, theta)
+		logistic = hypothesis/(np.exp(-hypothesis) + 1)
+		reg = (lamda/2*m) - np.sum(np.power(theta, 2))
+		loss = logistic - y
+		cost = np.sum(loss ** 2)
+
+		gradient = np.dot(xTrans, loss) / m
+
+		if (reg):
+			cost = cost + reg
+			theta = (theta - (alpha) * (gradient + reg))
+
+		else:
+			theta = theta - (alpha/m) * gradient
+
+		if (oldcost == cost):
+			value = False
+
+		else:
+			oldcost = cost
+
+	print(accuracy(theta, m, y, x))
+	return theta, accuracy(theta, m, y, x)
+
+
+
+def p1b_c():
+	"""
+	Funció principal per a l'apartat C de la pràctica 1b.
+	"""
+	ATT_MIN = 2 #Attributes' range of columns in DB
+	ATT_MAX = 8
+	TARGET = 8 #Column index of target
+	DB_GUESS = 9 #Column index of the database regression guess
+
+	DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+
+	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET)
+
+	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
+
+	
+
+
 
 def main():
 	p1b_c()
