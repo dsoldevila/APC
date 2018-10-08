@@ -30,7 +30,7 @@ def mean_squared_error(target, reg):
     """
     return ((target - reg)**2).mean()
 
-def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None, standarize=False):
+def load_dataset(path, i_attmin, i_attmax, i_target, col_names, i_dbguess=None, standarize=False):
     """
     Carrega la base de dades
     @param path (abs or not)
@@ -49,10 +49,10 @@ def load_dataset(path, i_attmin, i_attmax, i_target, i_dbguess=None, standarize=
     target = target.reshape(target.shape[0], 1)
     #db_guess = db_guess.reshape(db_guess.shape[0], 1)
     
-    return split_dataset(attributes, target, standarize=standarize)
+    return split_dataset(attributes, target, col_names, standarize=standarize)
     
 
-def split_dataset(attributes, target, train_ratio=0.8, standarize=False):
+def split_dataset(attributes, target, col_names, train_ratio=0.8, standarize=False):
     """
     Divideix aleatòriament la base de dades en training set i validation set
     """
@@ -67,7 +67,7 @@ def split_dataset(attributes, target, train_ratio=0.8, standarize=False):
     target_val = target[indices_val]
     
     if(standarize):
-        at_train, at_val = Standarize(at_train, at_val)
+        at_train, at_val = Standarize(at_train, at_val, col_names)
     
     return at_train, target_train, at_val, target_val
 
@@ -77,7 +77,7 @@ def regression(x, y):
     return regr
     
     
-def Standarize(at_train, at_val):
+def Standarize(at_train, at_val, col_names):
     mean = at_train.mean(axis=0) #compute mean for every attribute
     std = at_train.std(0) #standard deviation
     at_t = at_train - mean
@@ -85,15 +85,15 @@ def Standarize(at_train, at_val):
     
     at_v = at_val - mean
     at_v /= std
+
     
-    """
     for i in range(6):
         plt.figure()
-        plt.title("Histograma de l'atribut 0")
+        plt.title("Histograma de l'atribut "+str(col_names[i]))
         plt.xlabel("Attribute Value")
         plt.ylabel("Count")
-        hist = plt.hist(at_t[:,i], bins=11, range=[np.min(at_t[:,i]), np.max(at_t[:,i])], histtype="bar", rwidth=0.8)
-    """
+        plt.hist(at_t[:,i], bins=11, range=[np.min(at_t[:,i]), np.max(at_t[:,i])], histtype="bar", rwidth=0.8)
+    
     return at_t, at_v
     
 
@@ -109,7 +109,7 @@ def p1a_c(standarize):
     
     DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     
-    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, standarize=standarize)
+    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL[2:], standarize=standarize)
 
     #Calculo MSEs
     mse_list = []
@@ -144,4 +144,9 @@ def p1a_c(standarize):
     print(DB_COL[lowest_mse_i+ATT_MIN]+ " has the lowest mse: "+str(lowest_mse))
     
     return
-    
+
+
+print("#Compute MSEs with raw attributes:")
+p1a_c(standarize=False)
+print("\n#Compute MSEs with standarized attributes:")
+p1a_c(standarize=True)
