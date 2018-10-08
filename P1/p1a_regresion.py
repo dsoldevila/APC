@@ -5,9 +5,7 @@ Created on Thu Sep 27 17:54:15 2018
 """
 
 """NOTES
-    1- He obviat marca i model, ja que np.genfromtxt no suporta strings
-    i no sembla que tingui sentit tenir-los en compte com a mètrica de
-    rendiment. Mirar si tenen correlació, un "no crec" no és vàlid
+    Refer codi espagueti
 """
 
 
@@ -82,6 +80,7 @@ def Standarize(at_train, at_val, col_names):
     
     at_v = at_val - mean
     at_v /= std
+    print(std)
 
     
     for i in range(6):
@@ -142,8 +141,40 @@ def p1a_c(standarize):
     
     return
 
+def p1a_c2(standarize):
+    """
+    Apartat (C) de la pràctica 1a.
+    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el valor mse
+    """
+    ATT_MIN = 2 #Attributes' range of columns in DB
+    ATT_MAX = 8
+    TARGET = 8 #Column index of target
+    DB_GUESS = 9 #Column index of the database regression guess
+    
+    DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    
+    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL[2:], standarize=standarize)
+
+    #Calculo MSEs
+    mse_list = []
+    at_t = at_train[:, 3:6]
+    at_v = at_val[:, 3:6]
+    
+    regr = regression(at_t, target_train)
+    
+    predicted = regr.predict(at_v)
+
+    mse = mean_squared_error(target_val, predicted)
+    mse_list.append((DB_COL[0+ATT_MIN], mse))
+    
+        
+    print("MSE:"+str(mse))
+    
+    return
 
 print("#Compute MSEs with raw attributes:")
 p1a_c(standarize=False)
 print("\n#Compute MSEs with standarized attributes:")
 p1a_c(standarize=True)
+print("\n#Compute MSE with top 3 attributes with lowest std:")
+p1a_c2(standarize=True)
