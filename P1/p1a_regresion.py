@@ -76,19 +76,26 @@ class Regression:
 
         return  X
     
-    def Plot(self, x, x_name):
+    def plotX(self, x, x_name):
         plt.figure()
-        plt.title("Histograma de l'atribut "+str(x_name))
+        plt.title("Histograma de l'atribut " + x_name)
         plt.xlabel("Attribute Value")
         plt.ylabel("Count")
         plt.hist(x[:,:], bins=11, range=[np.min(x[:,:]), np.max(x[:,:])], histtype="bar", rwidth=0.8)
+        return
+    
+    def plotR(self, x, x_name, y, predicted):
+        plt.figure()
+        plt.title("Regressió de l'atribut " + x_name)
+        plt.scatter(x, y)
+        plt.plot(x, predicted, color="r")
         return
 
 
     
 def p1a_c():
     """
-    Calcula MSEs
+    Calcula MSEs i imprimeix les rectes de regressió per aca attribut
     """
     db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
@@ -108,6 +115,8 @@ def p1a_c():
     mse = regr.meanSquaredError(y_v, predicted)
     mse_list.append((db_col[0+regr.X_MIN], mse))
     
+    regr.plotR(xv, db_col[0], y_v, predicted)
+    
     lowest_mse = mse
     lowest_mse_i = 0
    
@@ -120,6 +129,8 @@ def p1a_c():
 
         mse = regr.meanSquaredError(y_v, predicted)
         mse_list.append((db_col[0+regr.X_MIN], mse))
+        
+        regr.plotR(xv, db_col[i], y_v, predicted)
         
         con = (lowest_mse<mse)
         lowest_mse = lowest_mse if con else mse
@@ -143,19 +154,44 @@ def p1a_c_1():
     
     for i in range(6):
         x = X[:, i].reshape(X.shape[0], 1)
-        regr.Plot(x, db_col[i+regr.X_MIN])
+        regr.plotX(x, db_col[i+regr.X_MIN])
         
     return
-    
-"""
-p1a_c(standarize=False)
-print("\n#Compute MSEs with standarized attributes:")
-p1a_c(standarize=True)
-print("\n#Compute MSE with top 3 attributes with lowest std:")
-p1a_c2(standarize=True)
-"""
 
-print("#Compute MSEs with raw attributes:")
-p1a_c()
+def p1a_c_2():
+    """
+    Calcula MSEs i imprimeix les rectes de regressió per aca attribut
+    """
+    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
+    
+    regr.X = regr.X[:, 3:5]
+    X_t, y_t, X_v, y_v = regr.splitDataset()
+    
+    
+    xt = X_t
+    xv = X_v
+    
+    linear_regression = regr.regression(xt, y_t)
+    predicted = linear_regression.predict(xv)
+
+    mse = regr.meanSquaredError(y_v, predicted)
+    
+    #PLOT
+    plt.figure()
+    plt.title("Regressió dels atributs CHMIN i CHMAX")
+    plt.scatter(xv[:, 0].reshape(xv.shape[0], 1), y_v, color="b")
+    plt.scatter(xv[:, 1].reshape(xv.shape[0], 1), y_v, color="g")
+    plt.plot(x, predicted, color="r")
+     
+    print("MSE:"+str(mse)+"\n")
+    
+    
+    return
+
+print("#Compute MSEs with raw attributes and print linear regression:")
+#p1a_c()
 print("#Plot standarized variables")
-p1a_c_1()
+#p1a_c_1()
+print("#Compute MSEs and print linear regression of CHMIN and CHMAX:") #CHMIN i CHMAX tenen una desviació estándar menor
+p1a_c_2()
