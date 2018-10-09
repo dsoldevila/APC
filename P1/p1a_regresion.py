@@ -15,121 +15,111 @@ from sklearn.linear_model import LinearRegression
 from sklearn.datasets import make_regression
 from matplotlib import pyplot as plt
 
+class Regression:
 
+    def __init__(self, X_min, X_max, target, db_col, path):
+        self.X_MIN = X_min #Attributes' range of columns in DB
+        self.X_MAX = X_max
+        self.TARGET= target #Column index of target
+        self.DB_COL = db_col
+        self.loadDataset(path)
+        return
+        
+        
+    def meanSquaredError(self, y, prediction):
+        """
+        Calcula l'error quadràtic mitjà comés pel regressor
+        @param target
+        @param reg 
+        """
+        return ((y-prediction)**2).mean()
+    
+    def loadDataset(self, path):
+        """
+        Carrega la base de dades
+        @param path (abs or not)
+        """
+        data = np.genfromtxt(path, delimiter=",")
+        
+        self.X = data[:, self.X_MIN:self.X_MAX]
+        self.y = data[:, self.TARGET]
+        
+        self.y = self.y.reshape(self.y.shape[0], 1)     
+        return
+        
+    def splitDataset(self, train_ratio=0.8):
+        """
+        Divideix aleatòriament la base de dades en training set i validation set
+        """
+        indices = np.arange(self.X.shape[0])
+        np.random.shuffle(indices)
+        n_train = int(np.floor(self.X.shape[0]*train_ratio))
+        indices_train = indices[:n_train]
+        indices_val = indices[-n_train:]
+        X_train = self.X[indices_train, :]
+        y_train = self.y[indices_train]
+        X_val = self.X[indices_val, :]
+        y_val = self.y[indices_val]
+        
+        return X_train, y_train, X_val, y_val
+        
+    def regression(self, X, y):
+        regr = LinearRegression()
+        regr.fit(X, y)
+        return regr
+    
+    def Standarize(self):
+        mean = self.X.mean(axis=0) #compute mean for every attribute
+        std = self.X.std(0) #standard deviation
+        X = self.X - mean
+        X /= std
 
-def mean_squared_error(target, reg):
-    """
-    Calcula l'error quadràtic mitjà comés pel regressor
-    @param target
-    @param reg 
-    """
-    return ((target - reg)**2).mean()
-
-def load_dataset(path, i_attmin, i_attmax, i_target, col_names, i_dbguess=None, standarize=False):
-    """
-    Carrega la base de dades
-    @param path (abs or not)
-    """
-    if(os.path.isabs(path) == False):
-        path = os.path.join(os.getcwd(), path)
-    data = np.genfromtxt(path, delimiter=",")
+        return  X
     
-    attributes = data[:, i_attmin:i_attmax]
-    target = data[:, i_target]
-    
-    if(i_dbguess!=None):
-        db_guess = data[:, i_dbguess]
-    
-
-    target = target.reshape(target.shape[0], 1)
-    #db_guess = db_guess.reshape(db_guess.shape[0], 1)
-    
-    return split_dataset(attributes, target, col_names, standarize=standarize)
-    
-
-def split_dataset(attributes, target, col_names, train_ratio=0.8, standarize=False):
-    """
-    Divideix aleatòriament la base de dades en training set i validation set
-    """
-    indices = np.arange(attributes.shape[0])
-    np.random.shuffle(indices)
-    n_train = int(np.floor(attributes.shape[0]*train_ratio))
-    indices_train = indices[:n_train]
-    indices_val = indices[-n_train:]
-    at_train = attributes[indices_train, :]
-    target_train = target[indices_train]
-    at_val = attributes[indices_val, :]
-    target_val = target[indices_val]
-    
-    if(standarize):
-        at_train, at_val = Standarize(at_train, at_val, col_names)
-    
-    return at_train, target_train, at_val, target_val
-
-def regression(x, y):
-    regr = LinearRegression()
-    regr.fit(x, y)
-    return regr
-    
-    
-def Standarize(at_train, at_val, col_names):
-    mean = at_train.mean(axis=0) #compute mean for every attribute
-    std = at_train.std(0) #standard deviation
-    at_t = at_train - mean
-    at_t /= std
-    
-    at_v = at_val - mean
-    at_v /= std
-    print(std)
-
-    
-    for i in range(6):
+    def Plot(self, x, x_name):
         plt.figure()
-        plt.title("Histograma de l'atribut "+str(col_names[i]))
+        plt.title("Histograma de l'atribut "+str(x_name))
         plt.xlabel("Attribute Value")
         plt.ylabel("Count")
-        plt.hist(at_t[:,i], bins=11, range=[np.min(at_t[:,i]), np.max(at_t[:,i])], histtype="bar", rwidth=0.8)
-    
-    return at_t, at_v
-    
+        plt.hist(x[:,:], bins=11, range=[np.min(x[:,:]), np.max(x[:,:])], histtype="bar", rwidth=0.8)
+        return
 
-def p1a_c(standarize):
-    """
-    Apartat (C) de la pràctica 1a.
-    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el valor mse
-    """
-    ATT_MIN = 2 #Attributes' range of columns in DB
-    ATT_MAX = 8
-    TARGET = 8 #Column index of target
-    DB_GUESS = 9 #Column index of the database regression guess
-    
-    DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
-    
-    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL[2:], standarize=standarize)
 
+    
+def p1a_c():
+    """
+    Calcula MSEs
+    """
+    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
+    
+    X_t, y_t, X_v, y_v = regr.splitDataset()
+    
+    
     #Calculo MSEs
     mse_list = []
-    at_t = at_train[:, 0].reshape(at_train.shape[0], 1)
-    at_v = at_val[:, 0].reshape(at_val.shape[0], 1)
     
-    regr = regression(at_t, target_train)
+    xt = X_t[:, 0].reshape(X_t.shape[0], 1)
+    xv = X_v[:, 0].reshape(X_v.shape[0], 1)
     
-    predicted = regr.predict(at_v)
+    linear_regression = regr.regression(xt, y_t)
+    predicted = linear_regression.predict(xv)
 
-    mse = mean_squared_error(target_val, predicted)
-    mse_list.append((DB_COL[0+ATT_MIN], mse))
+    mse = regr.meanSquaredError(y_v, predicted)
+    mse_list.append((db_col[0+regr.X_MIN], mse))
     
     lowest_mse = mse
     lowest_mse_i = 0
    
-    for i in range(1, ATT_MAX-ATT_MIN):
-        at_t = at_train[:, i].reshape(at_train.shape[0], 1)
-        at_v = at_val[:, i].reshape(at_val.shape[0], 1)
-        regr = regression(at_t, target_train)
-        predicted = regr.predict(at_v)
+    for i in range(1, regr.X_MAX-regr.X_MIN):
+        xt = X_t[:, i].reshape(X_t.shape[0], 1)
+        xv = X_v[:, i].reshape(X_v.shape[0], 1)
         
-        mse = mean_squared_error(target_val, predicted)
-        mse_list.append((DB_COL[i+ATT_MIN], mse))
+        linear_regression = regr.regression(xt, y_t)
+        predicted = linear_regression.predict(xv)
+
+        mse = regr.meanSquaredError(y_v, predicted)
+        mse_list.append((db_col[0+regr.X_MIN], mse))
         
         con = (lowest_mse<mse)
         lowest_mse = lowest_mse if con else mse
@@ -137,44 +127,35 @@ def p1a_c(standarize):
         
     print("MSEs:")
     print(str(mse_list)+"\n")
-    print(DB_COL[lowest_mse_i+ATT_MIN]+ " has the lowest mse: "+str(lowest_mse))
+    print(db_col[lowest_mse_i+regr.X_MIN]+ " has the lowest mse: "+str(lowest_mse))
     
     return
 
-def p1a_c2(standarize):
+def p1a_c_1():
     """
-    Apartat (C) de la pràctica 1a.
-    Imprimeix l'atribut amb l'error quadràtic mitjà (mse) més baix, juntament amb el valor mse
+    Plot standarized attributes
     """
-    ATT_MIN = 2 #Attributes' range of columns in DB
-    ATT_MAX = 8
-    TARGET = 8 #Column index of target
-    DB_GUESS = 9 #Column index of the database regression guess
     
-    DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
     
-    at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL[2:], standarize=standarize)
-
-    #Calculo MSEs
-    mse_list = []
-    at_t = at_train[:, 3:6]
-    at_v = at_val[:, 3:6]
+    X = regr.Standarize()
     
-    regr = regression(at_t, target_train)
-    
-    predicted = regr.predict(at_v)
-
-    mse = mean_squared_error(target_val, predicted)
-    mse_list.append((DB_COL[0+ATT_MIN], mse))
-    
+    for i in range(6):
+        x = X[:, i].reshape(X.shape[0], 1)
+        regr.Plot(x, db_col[i+regr.X_MIN])
         
-    print("MSE:"+str(mse))
-    
     return
-
-print("#Compute MSEs with raw attributes:")
+    
+"""
 p1a_c(standarize=False)
 print("\n#Compute MSEs with standarized attributes:")
 p1a_c(standarize=True)
 print("\n#Compute MSE with top 3 attributes with lowest std:")
 p1a_c2(standarize=True)
+"""
+
+print("#Compute MSEs with raw attributes:")
+p1a_c()
+print("#Plot standarized variables")
+p1a_c_1()
