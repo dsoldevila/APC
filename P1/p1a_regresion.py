@@ -23,6 +23,7 @@ class Regression:
         self.TARGET= target #Column index of target
         self.DB_COL = db_col
         self.loadDataset(path)
+        self.splitDataset()
         return
         
         
@@ -56,12 +57,11 @@ class Regression:
         n_train = int(np.floor(self.X.shape[0]*train_ratio))
         indices_train = indices[:n_train]
         indices_val = indices[-n_train:]
-        X_train = self.X[indices_train, :]
-        y_train = self.y[indices_train]
-        X_val = self.X[indices_val, :]
-        y_val = self.y[indices_val]
-        
-        return X_train, y_train, X_val, y_val
+        self.X_train = self.X[indices_train, :]
+        self.y_train = self.y[indices_train]
+        self.X_val = self.X[indices_val, :]
+        self.y_val = self.y[indices_val]
+        return
         
     def regression(self, X, y):
         regr = LinearRegression()
@@ -69,12 +69,15 @@ class Regression:
         return regr
     
     def Standarize(self):
-        mean = self.X.mean(axis=0) #compute mean for every attribute
-        std = self.X.std(0) #standard deviation
-        X = self.X - mean
-        X /= std
+        mean = self.X_train.mean(axis=0) #compute mean for every attribute
+        std = self.X_train.std(0) #standard deviation
+        self.X_train_std = self.X_train - mean
+        self.X_train_std /= std
+        
+        self.X_val_std = self.X_val - mean 
+        self.X_val_std /= std
 
-        return  X
+        return
     
     def plotX(self, x, x_name):
         plt.figure()
@@ -100,37 +103,36 @@ def p1a_c():
     db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
     
-    X_t, y_t, X_v, y_v = regr.splitDataset()
     
-    
-    #Calculo MSEs
+    #Calculo MSEs e imprimir regresión
     mse_list = []
     
-    xt = X_t[:, 0].reshape(X_t.shape[0], 1)
-    xv = X_v[:, 0].reshape(X_v.shape[0], 1)
+    print("#Compute MSEs with raw attributes and print linear regression:")
+    xt = regr.X_train[:, 0].reshape(regr.X_train.shape[0], 1)
+    xv = regr.X_val[:, 0].reshape(regr.X_val.shape[0], 1)
     
-    linear_regression = regr.regression(xt, y_t)
+    linear_regression = regr.regression(xt, regr.y_train)
     predicted = linear_regression.predict(xv)
 
-    mse = regr.meanSquaredError(y_v, predicted)
+    mse = regr.meanSquaredError(regr.y_val, predicted)
     mse_list.append((db_col[0+regr.X_MIN], mse))
     
-    regr.plotR(xv, db_col[0], y_v, predicted)
+    regr.plotR(xv, db_col[0], regr.y_val, predicted)
     
     lowest_mse = mse
     lowest_mse_i = 0
    
     for i in range(1, regr.X_MAX-regr.X_MIN):
-        xt = X_t[:, i].reshape(X_t.shape[0], 1)
-        xv = X_v[:, i].reshape(X_v.shape[0], 1)
-        
-        linear_regression = regr.regression(xt, y_t)
+        xt = regr.X_train[:, i].reshape(regr.X_train.shape[0], 1)
+        xv = regr.X_val[:, i].reshape(regr.X_val.shape[0], 1)
+    
+        linear_regression = regr.regression(xt, regr.y_train)
         predicted = linear_regression.predict(xv)
 
-        mse = regr.meanSquaredError(y_v, predicted)
+        mse = regr.meanSquaredError(regr.y_val, predicted)
         mse_list.append((db_col[0+regr.X_MIN], mse))
-        
-        regr.plotR(xv, db_col[i], y_v, predicted)
+    
+        regr.plotR(xv, db_col[0+regr.X_MIN], regr.y_val, predicted)
         
         con = (lowest_mse<mse)
         lowest_mse = lowest_mse if con else mse
@@ -138,60 +140,27 @@ def p1a_c():
         
     print("MSEs:")
     print(str(mse_list)+"\n")
-    print(db_col[lowest_mse_i+regr.X_MIN]+ " has the lowest mse: "+str(lowest_mse))
+    print(db_col[lowest_mse_i+regr.X_MIN]+ " has the lowest mse: "+str(lowest_mse)+"\n")
     
-    return
-
-def p1a_c_1():
-    """
-    Plot standarized attributes
-    """
     
-    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
-    regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
-    
-    X = regr.Standarize()
-    
+    #Plot standard attributes
+    print("#Plot standarized variables\n")
+    regr.Standarize()
     for i in range(6):
-        x = X[:, i].reshape(X.shape[0], 1)
+        x = regr.X_train_std[:, i].reshape(regr.X_train_std.shape[0], 1)
         regr.plotX(x, db_col[i+regr.X_MIN])
-        
+    #TODO Calcular MSEs con las variables normalizadas
+    
+    #Recompute regression with top3 attributes
+    X_t = regr.X_train[:, 0:3]
+    X_v = regr.X_val[:, 0:3]
+    
+    linear_regression = regr.regression(X_t, regr.y_train)
+    predicted = linear_regression.predict(X_v)
+
+    mse = regr.meanSquaredError(regr.y_val, predicted)
+    print("#Best attreibutes mse: "+str(mse))
+          
     return
 
-def p1a_c_2():
-    """
-    Calcula MSEs i imprimeix les rectes de regressió per aca attribut
-    """
-    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
-    regr = Regression(2, 8, 8, db_col, "Database/machine.data.txt")
-    
-    regr.X = regr.X[:, 3:5]
-    X_t, y_t, X_v, y_v = regr.splitDataset()
-    
-    
-    xt = X_t
-    xv = X_v
-    
-    linear_regression = regr.regression(xt, y_t)
-    predicted = linear_regression.predict(xv)
-
-    mse = regr.meanSquaredError(y_v, predicted)
-    
-    #PLOT
-    plt.figure()
-    plt.title("Regressió dels atributs CHMIN i CHMAX")
-    plt.scatter(xv[:, 0].reshape(xv.shape[0], 1), y_v, color="b")
-    plt.scatter(xv[:, 1].reshape(xv.shape[0], 1), y_v, color="g")
-    plt.plot(x, predicted, color="r")
-     
-    print("MSE:"+str(mse)+"\n")
-    
-    
-    return
-
-print("#Compute MSEs with raw attributes and print linear regression:")
-#p1a_c()
-print("#Plot standarized variables")
-#p1a_c_1()
-print("#Compute MSEs and print linear regression of CHMIN and CHMAX:") #CHMIN i CHMAX tenen una desviació estándar menor
-p1a_c_2()
+p1a_c()
