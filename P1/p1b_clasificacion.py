@@ -38,40 +38,6 @@ def train_svm(x, y, kernel='linear', C=0.01, gamma=0.001, probability=True):
     # l'entrenem
     return svclin.fit(x, y)
 
-def logistic_regression(x, y, alpha = 0.05, lamda = 0):
-
-	m, n = np.shape(x)
-	theta = np.ones(n)
-	xTrans = x.transpose()
-	oldcost = 0.0
-
-	value = True
-	while (value):
-		hypothesis = np.dot(x, theta)
-		logistic = hypothesis/(np.exp(-hypothesis) + 1)
-		reg = (lamda/2*m) - np.sum(np.power(theta, 2))
-		loss = logistic - y
-		cost = np.sum(loss ** 2)
-
-		gradient = np.dot(xTrans, loss) / m
-
-		if (reg):
-			cost = cost + reg
-			theta = (theta - (alpha) * (gradient + reg))
-
-		else:
-			theta = theta - (alpha/m) * gradient
-
-		if (oldcost == cost):
-			value = False
-
-		else:
-			oldcost = cost
-
-	print(accuracy(theta, m, y, x))
-	return theta, accuracy(theta, m, y, x)
-
-
 
 def p1b_c():
 	"""
@@ -88,7 +54,17 @@ def p1b_c():
 
 	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
 
+	logReg = LogisticRegression()
+
+	class_train = x_train[:,-1]
+	class_val = x_val[:,-1]
+
+	logReg.fit(x_train[:, :-1], class_val)
+
+	prediction = logReg.predict(x_train[:, :-1])
 	
+	print(metrics.classification_report(y_true=class_val, y_pred=prediction))
+	print(pd.crosstab(x_train[:,-1], prediction, rownames=['REAL'], colnames=['PREDICCION']))
 
 
 
