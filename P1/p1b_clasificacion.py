@@ -55,16 +55,7 @@ def p1b_c():
 
 	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
 
-	logReg = LogisticRegression()
 
-	class_train = x_train[:,-1]
-	class_val = x_val[:,-1]
-
-	logReg.fit(x_train[:, :-1], class_val)
-
-	prediction = logReg.predict(x_train[:, :-1])
-	
-	print("Correct classification Logistic ", "0.7: ", logReg.score(x_train[:,:-1], class_val))
 
 
 
