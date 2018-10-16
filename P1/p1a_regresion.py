@@ -4,12 +4,7 @@ Created on Thu Sep 27 17:54:15 2018
 @author: David
 """
 
-"""NOTES
-    Refer codi espagueti
-"""
-
-
-#import os
+import os
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.datasets import make_regression
@@ -131,6 +126,7 @@ class Regression:
         plt.scatter(x, y)
         plt.plot(x, predicted, color="r")
         return
+    
     def plotR3D(self, X_v, predicted, x1_name, x2_name):
         # Afegim els 1's
         A = np.hstack((X_v,np.ones([X_v.shape[0],1])))
@@ -156,49 +152,14 @@ class Regression:
         plt3d.plot_surface(xplot,yplot,zplot, color='red')
         plt3d.scatter(X_v[:,0],X_v[:,1],self.y_val)
         
+        #plt3d.view_init(45, 135)
+        """for angle in range(0, 360):
+            plt3d.view_init(30, angle)
+            plt.draw()
+            plt.pause(.001)"""
+        
         return
 
-def p1a_b(path):
-    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
-    x_min = 2
-    x_max = 8
-    target = 8
-    
-    print("#Trobar el millor train ratio")
-    train_ratios = (0.8, 0.7, 0.6, 0.5)
-    mse_list = []
-    regr = Regression(x_min, x_max, target, db_col, path, train_ratio=train_ratios[0])
-    X_t = regr.X_train[:, 0:3]
-    X_v = regr.X_val[:, 0:3]
-    linear_regression = regr.regression(X_t, regr.y_train)
-    predicted = linear_regression.predict(X_v)
-    mse = regr.meanSquaredError(regr.y_val, predicted)
-    mse_list.append((train_ratios[0], mse))
-    best_tr = train_ratios[0]
-    lowest_mse = mse
-    
-    for tr in train_ratios[1:]:
-        regr.splitDataset(train_ratio=tr)
-        X_t = regr.X_train[:, 0:3]
-        X_v = regr.X_val[:, 0:3]
-        linear_regression = regr.regression(X_t, regr.y_train)
-        predicted = linear_regression.predict(X_v)
-        mse = regr.meanSquaredError(regr.y_val, predicted)
-        mse_list.append((tr, mse))
-        con = (lowest_mse < mse)
-        best_tr = best_tr if con else tr
-        lowest_mse = lowest_mse if con else mse
-    print(mse_list)
-    print(str(best_tr)+" is the best train ratio\n")
-    
-    print("#Representació 3D de la regressió dels attributs MMIN, MMAX")
-    regr.splitDataset(train_ratio=best_tr)
-    X_t = regr.X_train[:, 0:3]
-    X_v = regr.X_val[:, 0:3]
-    linear_regression = regr.regression(X_t, regr.y_train)
-    predicted = linear_regression.predict(X_v)
-    regr.plotR3D(X_v[:, 1:], predicted, "MMIN", "MMAX")
-    return
     
 def p1a_c(path):
     """
@@ -223,21 +184,72 @@ def p1a_c(path):
     for i in range(6):
         x = regr.X_train_std[:, i].reshape(regr.X_train_std.shape[0], 1)
         regr.plotX(x, db_col[i+regr.X_MIN])
-        
-    #TODO Calcular MSEs con las variables normalizadas
     
-    #Recompute regression with top3 attributes
-    X_t = regr.X_train[:, 0:3]
-    X_v = regr.X_val[:, 0:3]
+    #Recompute regression with top 2 attributes
+    X_t = regr.X_train[:, 1:3]
+    X_v = regr.X_val[:, 1:3]
     
     linear_regression = regr.regression(X_t, regr.y_train)
     predicted = linear_regression.predict(X_v)
 
     mse = regr.meanSquaredError(regr.y_val, predicted)
-    print("#Best attreibutes (MYCT, MMIN, MMAX) mse: "+str(mse))
+    print("#Best attreibutes (MMIN, MMAX) mse: "+str(mse))
      
     return
 
+def p1a_b(path):
+    """
+    Experimentar amb diferents training ratios. Representació 3D de la regressió
+    """
+    
+    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    x_min = 2
+    x_max = 8
+    target = 8
+    
+    print("#Trobar el millor train ratio")
+    train_ratios = (0.8, 0.7, 0.6, 0.5)
+    mse_list = []
+    regr = Regression(x_min, x_max, target, db_col, path, train_ratio=train_ratios[0])
+    X_t = regr.X_train[:, 1:3]
+    X_v = regr.X_val[:, 1:3]
+    linear_regression = regr.regression(X_t, regr.y_train)
+    predicted = linear_regression.predict(X_v)
+    mse = regr.meanSquaredError(regr.y_val, predicted)
+    mse_list.append((train_ratios[0], mse))
+    best_tr = train_ratios[0]
+    lowest_mse = mse
+    
+    for tr in train_ratios[1:]:
+        regr.splitDataset(train_ratio=tr)
+        X_t = regr.X_train[:, 0:3]
+        X_v = regr.X_val[:, 0:3]
+        linear_regression = regr.regression(X_t, regr.y_train)
+        predicted = linear_regression.predict(X_v)
+        mse = regr.meanSquaredError(regr.y_val, predicted)
+        mse_list.append((tr, mse))
+        con = (lowest_mse < mse)
+        best_tr = best_tr if con else tr
+        lowest_mse = lowest_mse if con else mse
+    print(mse_list)
+    print(str(best_tr)+" is the best train ratio\n")
+    
+    print("#Representació 3D de la regressió dels attributs MMIN, MMAX")
+    regr.splitDataset(train_ratio=best_tr)
+    X_t = regr.X_train[:, 1:3]
+    X_v = regr.X_val[:, 1:3]
+    linear_regression = regr.regression(X_t, regr.y_train)
+    predicted = linear_regression.predict(X_v)
+    regr.plotR3D(X_v, predicted, "MMIN", "MMAX")
+    return
+
+def p1a_a(path):
+    """
+    Implementar descens de gradient
+    """
+    return
+
 if __name__ == "__main__":
-    #p1a_c("Database/machine.data.txt")
-    p1a_b("Database/machine.data.txt")
+    path = os.path.join("Database", "machine.data.txt")
+    #p1a_c(path)
+    p1a_b(path)
