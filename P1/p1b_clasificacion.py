@@ -48,15 +48,20 @@ def p1b_c():
 	Funció principal per a l'apartat C de la pràctica 1b.
 	"""
 	ATT_MIN = 2 #Attributes' range of columns in DB
-	ATT_MAX = 8
-	TARGET = 8 #Column index of target
-	DB_GUESS = 9 #Column index of the database regression guess
+	ATT_MAX = 9
+	TARGET = 9 #Column index of target
+	DB_GUESS = 8 #Column index of the database regression guess
 
-	DB_COL = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+	DB_COL = np.array(["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"])
 
 	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL)
 
-	print('Shape:', at_train.shape, target_train.shape)
+	# We use the Heatmap to know which variables are the most correlated
+	# from the estimated performance.
+	indexes = np.arange(0, ATT_MAX - ATT_MIN, dtype=int)
+	df2 = pd.DataFrame(at_train[:, range(0, 7)], columns = DB_COL[indexes])
+	df2['ERP'] = target_train
+	corrmat = df2.corr()
 
 
 
