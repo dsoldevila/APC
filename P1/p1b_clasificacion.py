@@ -2,14 +2,15 @@
 
 import os
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+#from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import LeaveOneOut, KFold
 from sklearn import svm
 import matplotlib.pyplot as plt
 
-# Importem el mètode per carregar la base de dades del mòdul de la pràctica 1a.
 from p1a_regresion import load_dataset, split_dataset
 
+
+"""
 def split_data(x, y, train_ratio=0.8):
 	indices = np.arange(x.shape[0])
 	np.random.shuffle(indices)
@@ -25,19 +26,21 @@ def split_data(x, y, train_ratio=0.8):
 	y_val = y[indices_val]
 	
 	return x_train, y_train, x_val, y_val
+"""
+
 
 def train_svm(x, y, kernel='linear', C=0.01, gamma=0.001, probability=True):
-    if(kernel =='linear'):
-        svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
+	if(kernel =='linear'):
+		svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
 
-    if(kernel =='poly'):
-        svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
+	if(kernel =='poly'):
+		svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
 
-    if(kernel =='rbf'):
-        svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
+	if(kernel =='rbf'):
+		svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
 
-    # l'entrenem
-    return svclin.fit(x, y)
+	# l'entrenem
+	return svclin.fit(x, y)
 
 
 def p1b_c():
@@ -53,18 +56,7 @@ def p1b_c():
 
 	at_train, target_train, at_val, target_val = load_dataset(os.path.join("Database","machine.data.txt"), ATT_MIN, ATT_MAX, TARGET, DB_COL)
 
-	x_train, y_train, x_val, y_val = split_data(at_train, at_val, 0.7)
-
-	logReg = LogisticRegression()
-
-	class_train = x_train[:,-1]
-	class_val = x_val[:,-1]
-
-	logReg.fit(x_train[:, :-1], class_val)
-
-	prediction = logReg.predict(x_train[:, :-1])
-	
-	print("Correct classification Logistic ", "0.7: ", logReg.score(x_train[:,:-1], class_val))
+	print('Shape:', at_train.shape, target_train.shape)
 
 
 
