@@ -21,10 +21,24 @@ class Clasificacion:
 	def load_Dataset(self, path):
 		data = np.genfromtxt(path, delimiter=",")
 
-		self.X = data[:, self.att_min:self.att_min]
+		self.X = data[:, self.att_min:self.att_max]
 		self.Y = data[:, self.target]
 
 		self.Y = self.Y.reshape(self.Y.shape[0], 1)     
+
+		return
+
+	def split_Dataset(self, train_ratio):
+		indices = np.arange(self.X.shape[0])
+		np.random.shuffle(indices)
+		n_train = int(np.floor(self.X.shape[0] * train_ratio))
+		indices_train = indices[:n_train]
+		indices_val = indices[-n_train:]
+		self.X_train = self.X[indices_train, :]
+		self.Y_train = self.Y[indices_train]
+		self.X_val = self.X[indices_val, :]
+		self.Y_val = self.Y[indices_val]
+
 		return
 
 
@@ -39,7 +53,7 @@ class Clasificacion:
 			svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
 
 		# l'entrenem
-		return svclin.fit(self.X, self.Y)
+		return svclin.fit(self.X_train, self.Y_train)
 
 
 def p1b_c(path):
@@ -54,7 +68,14 @@ def p1b_c(path):
 
 	DB_COL = np.array(["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"])
 
-	clas = Clasificacion(path, ATT_MIN, ATT_MAX, TARGET, DB_GUESS, DB_COL)
+	clsf = Clasificacion(path, ATT_MIN, ATT_MAX, TARGET, DB_GUESS, DB_COL)
+
+	clsf.split_Dataset(0.7)
+
+	clsf.train_svm('linear')
+
+
+
 
 
 if __name__ == "__main__":
