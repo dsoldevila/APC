@@ -53,7 +53,26 @@ class Clasificacion:
 			svclin = svm.SVC(C=C, kernel=kernel, gamma=gamma, probability=probability)
 
 		# l'entrenem
-		return svclin.fit(self.X_train, self.Y_train)
+		return svclin.fit(self.X_train, np.ravel(self.Y_train))
+
+	def minClassifier(self, lin, poly, rbf):
+		minim = min(lin, poly, rbf)
+
+		if minim == lin:
+			print("El kernel Lineal dóna l'error més baix: ", lin)
+
+		elif minim == poly:
+			print("El kernel Polinomial dóna l'error més baix: ", poly)
+
+		elif minim == rbf:
+			print("El kernel RBF dóna l'error més baix: ", rbf)
+
+		else:
+			print("Ha ocurregut un error.")
+
+		return
+
+
 
 
 def p1b_c(path):
@@ -72,12 +91,22 @@ def p1b_c(path):
 
 	clsf.split_Dataset(0.7)
 
-	clsf.train_svm('linear')
+	linModel = clsf.train_svm()
+	y_predLin = linModel.predict(clsf.X_val)
+	linPercent = np.mean(clsf.Y_val == y_predLin).astype('float32')
 
+	polyModel = clsf.train_svm('poly')
+	y_predPoly = polyModel.predict(clsf.X_val)
+	polyPercent = np.mean(clsf.Y_val == y_predPoly).astype('float32')
 
+	rbfModel = clsf.train_svm('rbf')
+	y_predRbf = rbfModel.predict(clsf.X_val)
+	rbfPercent = np.mean(clsf.Y_val == y_predRbf).astype('float32')
+
+	clsf.minClassifier(linPercent, polyPercent, rbfPercent)
 
 
 
 if __name__ == "__main__":
-    path = os.path.join("Database", "machine.data.txt")
-    p1b_c(path)
+	path = os.path.join("Database", "machine.data.txt")
+	p1b_c(path)
