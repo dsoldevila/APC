@@ -11,7 +11,7 @@ from sklearn.datasets import make_regression
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 
-class Regression:
+class Data:
 
     def __init__(self, X_min, X_max, target, db_col, path, train_ratio=0.8):
         self.X_MIN = X_min #Attributes' range of columns in DB
@@ -97,9 +97,9 @@ class Regression:
         return
         
     def regression(self, X, y):
-        regr = LinearRegression()
-        regr.fit(X, y)
-        return regr
+        data = LinearRegression()
+        data.fit(X, y)
+        return data
     
     def Standarize(self):
         mean = self.X_train.mean(axis=0) #compute mean for every attribute
@@ -160,39 +160,87 @@ class Regression:
         
         return
 
+class Regressor(object):
+    def __init__(self, theta0, theta1, alpha, x, y):
+        # Inicialitzem theta0 i theta1
+        self.theta0 = theta0
+        self.theta1 = theta1
+        self.alpha = alpha
+        self.x = x
+        self.y = y
+        return
+    
+    def predict(self, x):
+        # implementar aqui la funció de prediccio
+        return x*self.theta1 + self.theta0
+        
+    
+    def __update(self, hy, y):
+        # actualitzar aqui els pesos donada la prediccio (hy) i la y real.
+        me = (hy-y).mean()
+        theta0 = self.theta0 - self.alpha*me
+        self.theta0 = theta0
+        mex = ((hy-y)*self.x).mean()
+        theta1 = self.theta1 - self.alpha*mex
+        self.theta1 = theta1
+        return
+    
+    def train(self, max_iter, epsilon):
+        # Entrenar durant max_iter iteracions o fins que la millora sigui inferior a epsilon
+        
+        prediction = self.predict(self.x)
+        mse = ((self.y-prediction)**2).mean()
+        self.mse_list = [mse]
+        i = 0
+        while(mse>epsilon and i < max_iter):
+            self.__update(prediction, self.y)
+            prediction = self.predict(self.x)
+            mse = ((self.y-prediction)**2).mean()/2
+            self.mse_list.append(mse)
+            i = i+1
+        return
+    
+    def plotMSE(self):
+        mses = np.array(self.mse_list)
+        i = np.arange(mses.shape[0])
+        plt.figure()
+        plt.title("Plotting of MSE over time")
+        plt.plot(i, mses, color="r")
+    
+
     
 def p1a_c(path):
     """
-    Calcula MSEs i imprimeix les rectes de regressió per aca attribut
+    Calcula MSEs i imprimeix les rectes de regressió per cada attribut
     """
     db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
     x_min = 2
     x_max = 8
     target = 8
-    regr = Regression(x_min, x_max, target, db_col, path)
+    data = Data(x_min, x_max, target, db_col, path)
     
     #Calculo MSEs e imprimir regresión
     print("#Compute MSEs with raw attributes and print linear regression:")
-    mse_list, lm_name, lowest_mse = regr.computeMSE(regr.X_train, regr.X_val, np.arange(x_min, x_max), True)
+    mse_list, lm_name, lowest_mse = data.computeMSE(data.X_train, data.X_val, np.arange(x_min, x_max), True)
     print("MSEs:")
     print(str(mse_list)+"\n")
     print(lm_name+ " has the lowest mse: "+str(lowest_mse)+"\n")
     
     #Plot standard attributes
     print("#Plot standarized variables\n")
-    regr.Standarize()
+    data.Standarize()
     for i in range(6):
-        x = regr.X_train_std[:, i].reshape(regr.X_train_std.shape[0], 1)
-        regr.plotX(x, db_col[i+regr.X_MIN])
+        x = data.X_train_std[:, i].reshape(data.X_train_std.shape[0], 1)
+        data.plotX(x, db_col[i+data.X_MIN])
     
     #Recompute regression with top 2 attributes
-    X_t = regr.X_train[:, 1:3]
-    X_v = regr.X_val[:, 1:3]
+    X_t = data.X_train[:, 1:3]
+    X_v = data.X_val[:, 1:3]
     
-    linear_regression = regr.regression(X_t, regr.y_train)
+    linear_regression = data.regression(X_t, data.y_train)
     predicted = linear_regression.predict(X_v)
 
-    mse = regr.meanSquaredError(regr.y_val, predicted)
+    mse = data.meanSquaredError(data.y_val, predicted)
     print("#Best attreibutes (MMIN, MMAX) mse: "+str(mse))
      
     return
@@ -210,23 +258,23 @@ def p1a_b(path):
     print("#Trobar el millor train ratio")
     train_ratios = (0.8, 0.7, 0.6, 0.5)
     mse_list = []
-    regr = Regression(x_min, x_max, target, db_col, path, train_ratio=train_ratios[0])
-    X_t = regr.X_train[:, 1:3]
-    X_v = regr.X_val[:, 1:3]
-    linear_regression = regr.regression(X_t, regr.y_train)
+    data = Data(x_min, x_max, target, db_col, path, train_ratio=train_ratios[0])
+    X_t = data.X_train[:, 1:3]
+    X_v = data.X_val[:, 1:3]
+    linear_regression = data.regression(X_t, data.y_train)
     predicted = linear_regression.predict(X_v)
-    mse = regr.meanSquaredError(regr.y_val, predicted)
+    mse = data.meanSquaredError(data.y_val, predicted)
     mse_list.append((train_ratios[0], mse))
     best_tr = train_ratios[0]
     lowest_mse = mse
     
     for tr in train_ratios[1:]:
-        regr.splitDataset(train_ratio=tr)
-        X_t = regr.X_train[:, 0:3]
-        X_v = regr.X_val[:, 0:3]
-        linear_regression = regr.regression(X_t, regr.y_train)
+        data.splitDataset(train_ratio=tr)
+        X_t = data.X_train[:, 0:3]
+        X_v = data.X_val[:, 0:3]
+        linear_regression = data.regression(X_t, data.y_train)
         predicted = linear_regression.predict(X_v)
-        mse = regr.meanSquaredError(regr.y_val, predicted)
+        mse = data.meanSquaredError(data.y_val, predicted)
         mse_list.append((tr, mse))
         con = (lowest_mse < mse)
         best_tr = best_tr if con else tr
@@ -235,21 +283,81 @@ def p1a_b(path):
     print(str(best_tr)+" is the best train ratio\n")
     
     print("#Representació 3D de la regressió dels attributs MMIN, MMAX")
-    regr.splitDataset(train_ratio=best_tr)
-    X_t = regr.X_train[:, 1:3]
-    X_v = regr.X_val[:, 1:3]
-    linear_regression = regr.regression(X_t, regr.y_train)
+    data.splitDataset(train_ratio=best_tr)
+    X_t = data.X_train[:, 1:3]
+    X_v = data.X_val[:, 1:3]
+    linear_regression = data.regression(X_t, data.y_train)
     predicted = linear_regression.predict(X_v)
-    regr.plotR3D(X_v, predicted, "MMIN", "MMAX")
+    data.plotR3D(X_v, predicted, "MMIN", "MMAX")
     return
 
 def p1a_a(path):
     """
     Implementar descens de gradient
     """
+    db_col = ["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"]
+    x_min = 2
+    x_max = 8
+    target = 8
+    
+    data = Data(x_min, x_max, target, db_col, path)
+    data.Standarize()
+    xt = data.X_train_std[:, 2].reshape(data.X_train_std.shape[0], 1)
+    xv = data.X_val_std[:, 2].reshape(data.X_val_std.shape[0], 1)
+    regr = Regressor(1, 1, 0.01, xt, data.y_train)
+    regr.train(1000, 2000)
+    regr.plotMSE()
+    prediction = regr.predict(xv)
+    data.plotR(xv, db_col[2+x_min], data.y_val, prediction)
+    
+    
+    return
+
+def p1a_a_test():
+    
+    data = np.genfromtxt(path, delimiter=",")
+    x = data[:, 4]
+    y = data[:, 8] 
+    
+    #x = np.arange(10)
+    #y = x*x
+    indices = np.arange(x.shape[0])
+    np.random.shuffle(indices)
+    n_train = int(np.floor(x.shape[0]*0.8))
+    indices_train = indices[:n_train]
+    indices_val = indices[-n_train:]
+    xt = x[indices_train]
+    yt = y[indices_train]
+    xv = x[indices_val]
+    yv = y[indices_val]
+    
+    xt = xt.reshape(xt.shape[0], 1)
+    xv = xv.reshape(xv.shape[0], 1)
+    yt = yt.reshape(yt.shape[0], 1)
+    yv = yv.reshape(yv.shape[0], 1)
+    
+    mean = xt.mean() #compute mean for every attribute
+    std = xt.std(0) #standard deviation
+    xt = xt - mean
+    xt /= std
+    
+    xv = xv - mean 
+    xv /= std
+    
+    regr = Regressor(1, 1, 0.01, xt, yt)
+    regr.train(1000, 2000)
+    regr.plotMSE()
+    prediction = regr.predict(xv)
+    plt.figure()
+    plt.title("Regression")
+    plt.scatter(xv, yv)
+    plt.plot(xv, prediction, color="r")
+    
     return
 
 if __name__ == "__main__":
     path = os.path.join("Database", "machine.data.txt")
     #p1a_c(path)
-    p1a_b(path)
+    #p1a_b(path)
+    p1a_a(path)
+    #p1a_a_test()
