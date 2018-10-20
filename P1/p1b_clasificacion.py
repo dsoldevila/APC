@@ -10,11 +10,10 @@ import pandas as pd
 
 class Clasificacion:
 
-	def __init__(self, path, ATT_MIN, ATT_MAX, TARGET, DB_GUESS, DB_COL):
+	def __init__(self, path, ATT_MIN, ATT_MAX, TARGET, DB_COL):
 		self.att_min = ATT_MIN
 		self.att_max = ATT_MAX
 		self.target = TARGET
-		self.db_guess = DB_GUESS
 		self.db_col = DB_COL
 		self.load_Dataset(path)
 
@@ -55,17 +54,30 @@ class Clasificacion:
 		# l'entrenem
 		return svclin.fit(self.X_train, np.ravel(self.Y_train))
 
-	def minClassifier(self, lin, poly, rbf):
-		minim = min(lin, poly, rbf)
+	def minClassifier(self):
 
-		if minim == lin:
-			print("El kernel Lineal dóna l'error més baix: ", lin)
+		linModel = self.train_svm()
+		y_predLin = linModel.predict(self.X_val)
+		linPercent = np.mean(self.Y_val == y_predLin).astype('float32')
 
-		elif minim == poly:
-			print("El kernel Polinomial dóna l'error més baix: ", poly)
+		polyModel = self.train_svm('poly')
+		y_predPoly = polyModel.predict(self.X_val)
+		polyPercent = np.mean(self.Y_val == y_predPoly).astype('float32')
 
-		elif minim == rbf:
-			print("El kernel RBF dóna l'error més baix: ", rbf)
+		rbfModel = self.train_svm('rbf')
+		y_predRbf = rbfModel.predict(self.X_val)
+		rbfPercent = np.mean(self.Y_val == y_predRbf).astype('float32')
+
+		minim = min(linPercent, polyPercent, rbfPercent)
+
+		if minim == linPercent:
+			print("El kernel Lineal dóna l'error més baix: ", linPercent)
+
+		elif minim == polyPercent:
+			print("El kernel Polinomial dóna l'error més baix: ", polyPercent)
+
+		elif minim == rbfPercent:
+			print("El kernel RBF dóna l'error més baix: ", rbfPercent)
 
 		else:
 			print("Ha ocurregut un error.")
@@ -83,28 +95,14 @@ def p1b_c(path):
 	ATT_MIN = 2 #Attributes' range of columns in DB
 	ATT_MAX = 9
 	TARGET = 9 #Column index of target
-	DB_GUESS = 8 #Column index of the database regression guess
 
 	DB_COL = np.array(["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"])
 
-	clsf = Clasificacion(path, ATT_MIN, ATT_MAX, TARGET, DB_GUESS, DB_COL)
+	clsf = Clasificacion(path, ATT_MIN, ATT_MAX, TARGET, DB_COL)
 
 	clsf.split_Dataset(0.7)
 
-	linModel = clsf.train_svm()
-	y_predLin = linModel.predict(clsf.X_val)
-	linPercent = np.mean(clsf.Y_val == y_predLin).astype('float32')
-
-	polyModel = clsf.train_svm('poly')
-	y_predPoly = polyModel.predict(clsf.X_val)
-	polyPercent = np.mean(clsf.Y_val == y_predPoly).astype('float32')
-
-	rbfModel = clsf.train_svm('rbf')
-	y_predRbf = rbfModel.predict(clsf.X_val)
-	rbfPercent = np.mean(clsf.Y_val == y_predRbf).astype('float32')
-
-	clsf.minClassifier(linPercent, polyPercent, rbfPercent)
-
+	clsf.minClassifier()
 
 
 if __name__ == "__main__":
