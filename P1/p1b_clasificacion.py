@@ -2,9 +2,9 @@
 
 import os
 import numpy as np
-#from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import LeaveOneOut, KFold
-from sklearn import svm
+from sklearn import svm, metrics
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -54,35 +54,41 @@ class Clasificacion:
 		# l'entrenem
 		return svclin.fit(self.X_train, np.ravel(self.Y_train))
 
-	def minClassifier(self):
 
-		linModel = self.train_svm()
-		y_predLin = linModel.predict(self.X_val)
-		linPercent = np.mean(self.Y_val == y_predLin).astype('float32')
+	def regression(self):
+		particions = [0.5, 0.7, 0.8]
 
-		polyModel = self.train_svm('poly')
-		y_predPoly = polyModel.predict(self.X_val)
-		polyPercent = np.mean(self.Y_val == y_predPoly).astype('float32')
+		for part in particions:
+			self.split_Dataset(part)
+			logireg = LogisticRegression(solver='liblinear', multi_class='ovr')
+			logireg.fit(self.X_train, np.ravel(self.Y_train))
 
-		rbfModel = self.train_svm('rbf')
-		y_predRbf = rbfModel.predict(self.X_val)
-		rbfPercent = np.mean(self.Y_val == y_predRbf).astype('float32')
+			svmModelLin = self.train_svm('linear', C=2.0)
+			svmModelPoly = self.train_svm('poly', C=2.0)
+			svmModelRbf = self.train_svm('rbf', C=2.0)
 
-		minim = min(linPercent, polyPercent, rbfPercent)
+			print("Correct classification Logistic ", part, "%: ", logireg.score(self.X_val, self.Y_val))
+			print("SVM Linear Model ", part, "%: ", svmModelLin.score(self.X_val, self.Y_val))
+			print("SVM Polynomial Model ", part, "%: ", svmModelPoly.score(self.X_val, self.Y_val))
+			print("SVM RBF Model ", part, "%: ", svmModelRbf.score(self.X_val, self.Y_val))
+			print("\n")
 
-		if minim == linPercent:
-			print("El kernel Lineal dóna l'error més baix: ", linPercent)
 
-		elif minim == polyPercent:
-			print("El kernel Polinomial dóna l'error més baix: ", polyPercent)
+			yPredLog = logireg.predict(self.X_val)
+			yPredLin = svmModelLin.predict(self.X_val)
+			yPredPoly = svmModelPoly.predict(self.X_val)
+			yPredRbf = svmModelRbf.predict(self.X_val)
+			percent_correct_log = np.mean(self.Y_val == yPredLog).astype('float32')
+			percent_correct_lin = np.mean(self.Y_val == yPredLin).astype('float32')
+			percent_correct_poly = np.mean(self.Y_val == yPredPoly).astype('float32')
+			percent_correct_rbf = np.mean(self.Y_val == yPredRbf).astype('float32')
+			print("Percent Logistic ", part, "%: ", percent_correct_log)
+			print("Percent Lineal ", part, "%: ", percent_correct_lin)
+			print("Percent Polynomial ", part, "%: ", percent_correct_poly)
+			print("Percent RBF ", part, "%: ", percent_correct_rbf)
+			print("\n")
 
-		elif minim == rbfPercent:
-			print("El kernel RBF dóna l'error més baix: ", rbfPercent)
 
-		else:
-			print("Ha ocurregut un error.")
-
-		return
 
 
 
@@ -99,10 +105,14 @@ def p1b_c(path):
 	DB_COL = np.array(["vendor", "Model", "MYCT", "MMIN", "MMAX", "CACH", "CHMIN", "CHMAX", "PRP", "ERP"])
 
 	clsf = Clasificacion(path, ATT_MIN, ATT_MAX, TARGET, DB_COL)
+	clsf.regression()
 
-	clsf.split_Dataset(0.7)
 
-	clsf.minClassifier()
+
+
+
+
+
 
 
 if __name__ == "__main__":
