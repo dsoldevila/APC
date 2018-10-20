@@ -200,12 +200,6 @@ class Regressor(object):
             i = i+1
         return
     
-    def plotMSE(self):
-        mses = np.array(self.mse_list)
-        i = np.arange(mses.shape[0])
-        plt.figure()
-        plt.title("Plotting of MSE over time")
-        plt.plot(i, mses, color="r")
     
 
     
@@ -291,6 +285,7 @@ def p1a_b(path):
     data.plotR3D(X_v, predicted, "MMIN", "MMAX")
     return
 
+
 def p1a_a(path):
     """
     Implementar descens de gradient
@@ -299,16 +294,36 @@ def p1a_a(path):
     x_min = 2
     x_max = 8
     target = 8
+    alpha = [0.01, 0.1, 1]
+    mse_max_iter = 500
+    epsilon = 2000
     
     data = Data(x_min, x_max, target, db_col, path)
+    
     data.Standarize()
     xt = data.X_train_std[:, 2].reshape(data.X_train_std.shape[0], 1)
     xv = data.X_val_std[:, 2].reshape(data.X_val_std.shape[0], 1)
-    regr = Regressor(1, 1, 0.01, xt, data.y_train)
-    regr.train(1000, 2000)
-    regr.plotMSE()
-    prediction = regr.predict(xv)
-    data.plotR(xv, db_col[2+x_min], data.y_val, prediction)
+    
+    regr = Regressor(1, 1, alpha[0], xt, data.y_train)
+    regr.train(mse_max_iter, epsilon)
+    mses = np.array(regr.mse_list)
+    for a in alpha[1:]:
+        regr = Regressor(1, 1, a, xt, data.y_train)
+        regr.train(mse_max_iter, epsilon)
+        mses = np.vstack((mses, regr.mse_list))
+    mses = np.transpose(mses)
+    mse_max_iter = np.arange(mses.shape[0])
+    plt.figure()
+    plt.title("Plotting of MSE over time")
+    for i in range(len(alpha)):
+        plt.plot(mse_max_iter, mses[:,i], label=str(alpha[i]))
+        print("Amb Learning rate = "+str(alpha[i])+", MSE = "+str(np.amin(mses[:, i])))
+    #plt.yscale('log')
+    #plt.xscale('log')
+    plt.legend()
+    plt.show()
+    #prediction = regr.predict(xv)
+    #data.plotR(xv, db_col[2+x_min], data.y_val, prediction)
     
     
     return
